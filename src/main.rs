@@ -22,6 +22,7 @@ enum IpErrors {
     InvalidLength,
     InvalidIp,
     InvalidInput,
+    NoCIDR,
 }
 struct IpSubnetter{
     ip: IpAddr,
@@ -33,12 +34,19 @@ impl IpSubnetter {
     pub fn new(ip_cidr: &String) -> IpSubnetter {
         let mut ip_vec: Vec<u8> = Vec::new();
         let mut total = String::new();
-
+        //Splits the IP from the subnet.
+        let ip_cidr_split = match IpSubnetter::ip_cidr_split(ip_cidr) {
+            Err(e) => match e {
+                IpErrors::NoCIDR => panic!("No CIDR notation"),
+                _ => panic!("Something else went wrong in CIDR error handling"),
+            },
+            Ok (s)=> s,
+        };
         /**
          * TODO: Implement a subnetter
          */
         IpSubnetter {
-            ip: match IpSubnetter::check_and_return_u8_tuple(IpSubnetter::vec_split(ip_cidr)) {
+            ip: match IpSubnetter::check_and_return_u8_tuple(IpSubnetter::vec_split(ip_cidr_split.0)) {
                 Err(e) => {
                     println!("There was an error");
                     match e {
@@ -51,10 +59,12 @@ impl IpSubnetter {
                 Ok(ip) => IpAddr::V4(Ipv4Addr::new(ip.0, ip.1, ip.2, ip.3)),
             },
             subnet: 24,
-            subnet_long: (0,0,0,0),
+            subnet_long: IpSubnetter::calc_subnet_long(ip_cidr_split.1),
         }
     }
-    fn vec_split(s: &String) -> Vec<&str>{
+
+    //This function is core, please don't delete
+    fn vec_split(s: &str) -> Vec<&str>{
         s.split('.').collect()
     }
     
@@ -87,6 +97,23 @@ impl IpSubnetter {
         println!("{:?}", u8_vec);
         //Please stop yelling at me
         Ok((u8_vec[0],u8_vec[1],u8_vec[2],u8_vec[3]))
+    }
+
+    fn calc_subnet_long(cidr_string: &str) -> (u8, u8, u8, u8) {
+
+        (127,0,0,0)
+    }
+
+    fn ip_cidr_split(length: &String) -> Result<(&str, &str), IpErrors> {
+        let temp_vec: Vec<&str> = length.split('/').collect();
+        if temp_vec.len() != 2 {
+            return Err(IpErrors::NoCIDR);
+        }
+
+        Ok((temp_vec[0], temp_vec[1]))
+
+        
+
     }
 }
 
