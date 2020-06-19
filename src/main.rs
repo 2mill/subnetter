@@ -2,6 +2,15 @@ use std::env;
 use std::process;
 use std::net::{IpAddr, Ipv4Addr};
 use std::result::Result;
+
+
+
+/// TODO : Port everything into a lib.rs, test cases, and better formatting along with Display trait
+/// Also need a better error handler.
+
+//Clean up config to be more modular
+//Also make it so that the submask can be better displayed
+//Calculate Range for a given address.
 fn main() {
 
     //LOGIC
@@ -12,11 +21,8 @@ fn main() {
     //Start off with checking for a valid IP
 
     let args: Vec<String> = env::args().collect();
-    IpSubnetter::new(&args[1]);
-
-
-
-
+    let IpSub: IpSubnetter = IpSubnetter::new(&args[1]);
+    println!("{:?}", IpSub.subnet_long);
 }
 enum IpErrors {
     InvalidLength,
@@ -42,9 +48,6 @@ impl IpSubnetter {
             },
             Ok (s)=> s,
         };
-        /**
-         * TODO: Implement a subnetter
-         */
         IpSubnetter {
             ip: match IpSubnetter::check_and_return_u8_tuple(IpSubnetter::vec_split(ip_cidr_split.0)) {
                 Err(e) => {
@@ -58,7 +61,7 @@ impl IpSubnetter {
                 },
                 Ok(ip) => IpAddr::V4(Ipv4Addr::new(ip.0, ip.1, ip.2, ip.3)),
             },
-            subnet: 24,
+            subnet: ip_cidr_split.1.parse::<u8>().unwrap(),
             subnet_long: IpSubnetter::calc_subnet_long(ip_cidr_split.1),
         }
     }
@@ -95,13 +98,29 @@ impl IpSubnetter {
             });
         }
         println!("{:?}", u8_vec);
-        //Please stop yelling at me
+        //This should be the IP split into a tuple at this point
         Ok((u8_vec[0],u8_vec[1],u8_vec[2],u8_vec[3]))
     }
 
     fn calc_subnet_long(cidr_string: &str) -> (u8, u8, u8, u8) {
+        println!("{}", cidr_string);
+        let num = cidr_string.parse::<u8>().unwrap();
+        let filled_octets = num / 8;
+        let remaining_bits_number = IpSubnetter::get_subnet_from_remaining_bits(num % 8);
+        let tuple_end: (u8, u8, u8, u8); 
+        let octet: (u8, u8, u8, u8) = match filled_octets {
+            1 => (255, remaining_bits_number, 0, 0),
+            2 => (255, 255, remaining_bits_number, 0),
+            3 => (255, 255, 255, remaining_bits_number),
 
-        (127,0,0,0)
+            //This would be a broadcast address, and should not be allowed from earlier code
+            4 => (255, 255, 255, 255),
+
+            //This should never happen
+            _ => (0, 0, 0, 0),
+        };
+        octet
+        //Mask calculations
     }
 
     fn ip_cidr_split(length: &String) -> Result<(&str, &str), IpErrors> {
@@ -114,6 +133,17 @@ impl IpSubnetter {
 
         
 
+    }
+
+    //Don't fuck with this because it works, but could use some refacotring in the future.
+    fn get_subnet_from_remaining_bits(num: u8) -> u8 {
+        let mut total: u8 = 0;
+        let two: u8 = 2;
+        for x in 8-num..8 {
+
+            total += 2u8.pow(x as u32);
+        }
+        total
     }
 }
 
