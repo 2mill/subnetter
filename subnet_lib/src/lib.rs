@@ -6,42 +6,58 @@ mod subnetter {
         InvalidInput,
         NoCIDR,
     }
-    pub struct IpSubnet {
+    struct IpSubnet {
         ip: IpAddr,
         cidr_notation: u8,
         mask: (u8, u8, u8, u8),
+        broadcast: (u8, u8, u8, u8),
+        network_address: (u8, u8, u8, u8),
+        block_size = u32,
     }
 
     impl IpSubnet {
-        pub fn new() -> IpSubnet {
-            IpSubnet {
-                ip: IpAddr::V4(Ipv4Addr::new(192, 168, 0, 2)),
-                cidr_notation: 29,
-                mask: calculate_mask_from_cidr(29),
-            }
+        pub fn new(ip_with_cidr: &String) -> IpSubnet {
+
+
+
+
         }
     }
 
-    //Fix this tomorrow
-    pub fn get_tuple_ip_from_string(s: &String) -> Result<(u8, u8, u8, u8), IpErrors> {
-        let vec_split = split_dots_into_vec(s);
-        if vec_split.len() != 4 {
-            return Err(IpErrors::InvalidIp);
+    fn split_ip_cidr_string(s: &String) -> Result<Vec<&str>, IpErrors>{
+        let cidr_split: Vec<&str> = s.split('/').collect();
+        
+        if cidr_split.len() == 2 {
+            Ok(cidr_split)
+        } else {
+            Err(IpErrors::NoCIDR)
         }
-        let builder: (u8, u8, u8, u8);
-        for x in 0..4 {
-            builder.x = {
-                match vec_split[x].parse::<u8>() {
+    }
+
+
+    //Fix this tomorrow
+    fn get_tuple_ip_from_string(s: &String) -> Result<(u8, u8, u8, u8), IpErrors> {
+        let vec_split = split_dots_into_vec(s);
+        let mut vec_format: Vec<u8> = Vec::new();
+        if vec_split.len() == 4 {
+            //Check that everything formats properly
+            for x in 0..4 {
+                vec_format[x] = match vec_split[x].parse::<u8>() {
                     Err(e) => return Err(IpErrors::InvalidIp),
                     Ok(num) => num,
                 }
-            }          
+            }
         }
-        Ok(builder)
+        Ok((vec_format[0], vec_format[1], vec_format[2], vec_format[3]))
     }
 
-    fn split_dots_into_vec(s: &String) -> Vec<&str> {
-        s.split('.').collect()
+    fn split_(s: &String) -> Result<Vec<&str>, IpErrors> {
+        //Figures out if there is enough elements to pass into the next functions
+        let split_vec = s.split('.').collect();
+        if (split_vec.len() != 4) {
+            return IpErrors::InvalidLength;
+        }
+        Ok(split_vec);
     }
     fn calculate_mask_from_cidr(cidr: u8) -> (u8, u8, u8, u8) {
         let filled_octets = cidr / 8;
