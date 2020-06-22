@@ -17,23 +17,41 @@ mod subnetter {
 
     impl IpSubnet {
         pub fn new(ip_with_cidr: &String) -> IpSubnet {
-
-
-
-
         }
     }
 
+    //This function will triage most of the operations for the struct.
+    //This is done so I don't have to run through processes over and over
+    //again and take care of it very quickly.
+    //This will also arm out into error handlers
+    fn triage(s: &String) {
+
+    }
+
+    //This function will help with translating into the 
+    //Error handler
+    fn compile_into_ipaddr_struct(s: &String) -> IpAddr {
+        let first_split_vec = match split_ip_cidr_string(s) {
+            Err(e) => panic!("No CIDR given"),
+            Ok(hahaha) => hahaha,
+        }
+        //At this point we will have a vec with the first index being
+        //The IP as a &str and the second element being the CIDR notation
+        
+        //This string would be the IP
+        //We don't need to care about the CIDR at this point.
+        let ip_string = first_split_vec[0];
+        let ip_tuple = 
+
+    }
     fn split_ip_cidr_string(s: &String) -> Result<Vec<&str>, IpErrors>{
         let cidr_split: Vec<&str> = s.split('/').collect();
-        
         if cidr_split.len() == 2 {
             Ok(cidr_split)
         } else {
             Err(IpErrors::NoCIDR)
         }
     }
-
 
     //Fix this tomorrow
     fn get_tuple_ip_from_string(s: &String) -> Result<(u8, u8, u8, u8), IpErrors> {
@@ -51,7 +69,7 @@ mod subnetter {
         Ok((vec_format[0], vec_format[1], vec_format[2], vec_format[3]))
     }
 
-    fn split_(s: &String) -> Result<Vec<&str>, IpErrors> {
+    fn split_dots_into_vec(s: &String) -> Result<Vec<&str>, IpErrors> {
         //Figures out if there is enough elements to pass into the next functions
         let split_vec = s.split('.').collect();
         if (split_vec.len() != 4) {
