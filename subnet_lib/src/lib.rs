@@ -1,10 +1,11 @@
+use error_handler;
 mod subnetter {
     use std::net::{IpAddr, Ipv4Addr};
     enum IpErrors {
         InvalidLength,
         InvalidIp,
         InvalidInput,
-        NoCIDR,
+        NoCIDR(u8),
     }
     struct IpSubnet {
         ip: IpAddr,
@@ -12,44 +13,56 @@ mod subnetter {
         mask: (u8, u8, u8, u8),
         broadcast: (u8, u8, u8, u8),
         network_address: (u8, u8, u8, u8),
-        block_size = u32,
+        block_size: u32,
     }
 
     impl IpSubnet {
         pub fn new(ip_with_cidr: &String) -> IpSubnet {
+            let ip_cidr_split: Vec<&str> =  match split_ip_cidr_string(ip_with_cidr) {
+                Err(e) => panic!("Problem splitting between IP and CIDR"),
+                Ok(vec_split) => vec_split,
+            }
+
         }
     }
-
+    fn create_cidr_simple(s: &str) -> Result<u8, IpErrors> {
+        match s.parse::<u8>() {
+            Err(e) => Err(IpErrors::NoCIDR(1u8)),
+            Ok(num) => Ok(num),
+        }
+    }
     //This function will triage most of the operations for the struct.
     //This is done so I don't have to run through processes over and over
     //again and take care of it very quickly.
     //This will also arm out into error handlers
-    fn triage(s: &String) {
-
-    }
 
     //This function will help with translating into the 
     //Error handler
+
+
     fn compile_into_ipaddr_struct(s: &String) -> IpAddr {
         let first_split_vec = match split_ip_cidr_string(s) {
             Err(e) => panic!("No CIDR given"),
             Ok(hahaha) => hahaha,
-        }
+        };
         //At this point we will have a vec with the first index being
         //The IP as a &str and the second element being the CIDR notation
         
         //This string would be the IP
         //We don't need to care about the CIDR at this point.
         let ip_string = first_split_vec[0];
-        let ip_tuple = 
-
+        let ip_tuple = match get_tuple_ip_from_string(ip_string) {
+            Err(e) => panic!("There was an error building the tuple"),
+            Ok(t) => t,
+        };
+        IpAddr::V4(Ipv4Addr::new(ip_tuple.0, ip_tuple.1, ip_tuple.2, ip_tuple.3))
     }
     fn split_ip_cidr_string(s: &String) -> Result<Vec<&str>, IpErrors>{
         let cidr_split: Vec<&str> = s.split('/').collect();
         if cidr_split.len() == 2 {
             Ok(cidr_split)
         } else {
-            Err(IpErrors::NoCIDR)
+            Err(IpErrors::NoCIDR(2))
         }
     }
 
