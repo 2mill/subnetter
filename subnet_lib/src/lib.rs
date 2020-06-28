@@ -2,7 +2,7 @@ mod error_handler;
 
 mod subnetter {
     use std::net::{IpAddr, Ipv4Addr};
-    struct IpSubnet {
+    pub struct IpSubnet {
         ip: IpAddr,
         cidr_notation: u8,
         mask: (u8, u8, u8, u8),
@@ -37,24 +37,29 @@ mod subnetter {
             let mask = calculate_mask_from_cidr(&cidr_notation);
             let block_size = calc_block_size(&cidr_notation);
 
-            let network_address
+            let network_address = (0,0,0,0);
+            println!("block size: {:?}", block_size);
+
             IpSubnet {
                 ip,
                 cidr_notation,
                 mask,
-                broadcast: unimplemented!(),
-                network_address: unimplemented!(),
                 block_size,
+                network_address,
+                broadcast: unimplemented!(),
             }
 
 
         }
     }
 
+    // fn calc_broadcast_address(ip: )
+
 
     fn calc_block_size(cidr_mask: &u8) -> (u8, u8){
         //calculate the bits already filled
-
+        //block at this point should be displaying the block size and what section those blocks are skipping in.
+        //This should also make it easier to calculating the network and broadcast address I think?
         let section = cidr_mask / 8;
         let filled_octets_bit_totals = 8u32.pow((cidr_mask / 8) as u32);
         (2u8.pow(filled_octets_bit_totals - *cidr_mask as u32), section)
@@ -102,14 +107,16 @@ mod subnetter {
             Err(e) => return Err(IpErrors::InvalidLength),
             Ok(num) => num,
         };
+        println!("{}", vec_split.len());
         let mut vec_format: Vec<u8> = Vec::new();
         if vec_split.len() == 4 {
             //Check that everything formats properly
             for x in 0..4 {
-                vec_format[x] = match vec_split[x].parse::<u8>() {
+                let temp: u8 = match vec_split[x].parse::<u8>() {
                     Err(e) => return Err(IpErrors::InvalidIp),
                     Ok(num) => num,
-                }
+                };
+                vec_format.push(temp);
             }
         }
         Ok((vec_format[0], vec_format[1], vec_format[2], vec_format[3]))
@@ -152,20 +159,21 @@ mod subnetter {
         }
         total
     }
-    fn reverse_bit_count(num: u32) -> u32 {
-        let mut total:u32 = 0;
-        for x in 
-    }
 
 
 }
 
-
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
     fn it_works() {
         assert_eq!(2 + 2, 4);
+    }
+    #[test]
+    fn check_something() {
+        let temp = String::from("127.0.0.1/8");
+        let subnet = subnetter::IpSubnet::new(&temp);
     }
 
 }
