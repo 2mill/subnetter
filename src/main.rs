@@ -112,7 +112,6 @@ impl IpSubnetter {
             1 => (255, remaining_bits_number, 0, 0),
             2 => (255, 255, remaining_bits_number, 0),
             3 => (255, 255, 255, remaining_bits_number),
-
             //This would be a broadcast address, and should not be allowed from earlier code
             4 => (255, 255, 255, 255),
 
