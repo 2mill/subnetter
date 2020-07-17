@@ -142,7 +142,7 @@ impl IpSubnetter {
 
             total += 2u8.pow(x as u32);
         }
-        total
+        
     }
 }
 
