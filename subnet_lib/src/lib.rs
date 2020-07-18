@@ -14,6 +14,8 @@ mod subnetter {
 
     pub fn new(ip_string: String) -> IpSubnet {
 
+
+
         //Begin by parsing the String into parts.
     }    
 
