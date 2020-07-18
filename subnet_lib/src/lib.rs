@@ -1,179 +1,144 @@
-mod error_handler;
-
+use std::process;
 mod subnetter {
-    use std::net::{IpAddr, Ipv4Addr};
-    pub struct IpSubnet {
-        ip: IpAddr,
-        cidr_notation: u8,
-        mask: (u8, u8, u8, u8),
-        broadcast: (u8, u8, u8, u8),
-        network_address: (u8, u8, u8, u8),
-        block_size: (u8,u8),
+    use std::net::Ipv4Addr;
+    pub enum IpErrors {
+        InvalidInput(u8),
+        InvalidCidr(u8),
     }
 
-    enum IpErrors {
-            InvalidLength,
-            InvalidIp,
-            InvalidInput,
-            NoCIDR(u8),
+    struct IpSubnet {
+        ip: Ipv4Addr,
+        mask: (u8, u8, u8, u8), 
+        cidr: u8,
     }
 
-
-    impl IpSubnet {
-        pub fn new(ip_with_cidr: &String) -> IpSubnet {
-            let ip_cidr_split: Vec<&str> = match split_ip_cidr_string(ip_with_cidr) {
-                Err(e) => {
-                    unimplemented!("Needs implementation for handling no slash for notation");
-                },
-                Ok(num) => num,
-            };
-            //At this point the thing we are working with would be a &str and the original
-            //parameter would be gone
-            let cidr_notation = match create_cidr_simple(ip_cidr_split[1]) {
-                Err(e) => unimplemented!("Needs implementation for invalid CIDR notation" ),
-                Ok(num) => num,
-            };
-            let ip = compile_into_ipaddr_struct(ip_cidr_split[0]);
-            let mask = calculate_mask_from_cidr(&cidr_notation);
-            let block_size = calc_block_size(&cidr_notation);
-
-            let network_address = (0,0,0,0);
-            println!("block size: {:?}", block_size);
-
-            IpSubnet {
-                ip,
-                cidr_notation,
-                mask,
-                block_size,
-                network_address,
-                broadcast: unimplemented!(),
-            }
+    pub fn new(ip_string: String) -> IpSubnet {
 
 
+
+        //Begin by parsing the String into parts.
+    }    
+
+    fn build_ipv4_struct(numbers: Vec<u8>) -> Ipv4Addr {
+        //Gonna put this in here, because I do not want to have another result type return
+        if numbers.len() != 4 {
+            panic!("Invalid length was given");
         }
+        Ipv4Addr::new(numbers[0], numbers[1], numbers[2], numbers[3])
+
     }
 
-    // fn calc_broadcast_address(ip: )
-
-
-    fn calc_block_size(cidr_mask: &u8) -> (u8, u8){
-        //calculate the bits already filled
-        //block at this point should be displaying the block size and what section those blocks are skipping in.
-        //This should also make it easier to calculating the network and broadcast address I think?
-        let section = cidr_mask / 8;
-        let filled_octets_bit_totals = 8u32.pow((cidr_mask / 8) as u32);
-        (2u8.pow(filled_octets_bit_totals - *cidr_mask as u32), section)
-    }
-
-    fn create_cidr_simple(s: &str) -> Result<u8, IpErrors> {
-        match s.parse::<u8>() {
-            Err(e) => Err(IpErrors::NoCIDR(1u8)),
-            Ok(num) => Ok(num),
+    fn split_string(ip_string: &String) -> Result<Vec<&str>, IpErrors> {
+        //Splititng at the slash notation and if the result is not a len of 2 then we return an error.
+        let split: Vec<&str> = ip_string.split('/').collect();
+        if split.len() == 2 {
+            return Ok(split);
         }
+        Err(IpErrors::InvalidInput(1))
     }
-    //This function will triage most of the operations for the struct.
-    //This is done so I don't have to run through processes over and over
-    //again and take care of it very quickly.
-    //This will also arm out into error handlers
 
-    //This function will help with translating into the 
-    //Error handler
-
-
-    fn compile_into_ipaddr_struct(s: &str) -> IpAddr {
-        //At this point we will have a vec with the first index being
-        //The IP as a &str and the second element being the CIDR notation
-        
-        //This string would be the IP
-        //We don't need to care about the CIDR at this point.
-        let ip_tuple = match get_tuple_ip_from_string(s) {
-            Err(e) => panic!("There was an error building the tuple"),
-            Ok(t) => t,
-        };
-        IpAddr::V4(Ipv4Addr::new(ip_tuple.0, ip_tuple.1, ip_tuple.2, ip_tuple.3))
-    }
-    fn split_ip_cidr_string(s: &String) -> Result<Vec<&str>, IpErrors>{
-        let cidr_split: Vec<&str> = s.split('/').collect();
-        if cidr_split.len() == 2 {
-            Ok(cidr_split)
-        } else {
-            Err(IpErrors::NoCIDR(2))
+    fn convert_string_into_tuple(ipv4: &String) -> Result<Vec<u8>, IpErrors>{
+        let vec_split: Vec<&str> = ipv4.split('.').collect();
+        if vec_split.len() != 4 {
+            return Err(IpErrors::InvalidInput(2));
         }
-    }
 
-    //Fix this tomorrow
-    fn get_tuple_ip_from_string(s: &str) -> Result<(u8, u8, u8, u8), IpErrors> {
-        let vec_split = match split_dots_into_vec(s) {
-            Err(e) => return Err(IpErrors::InvalidLength),
-            Ok(num) => num,
-        };
-        println!("{}", vec_split.len());
         let mut vec_format: Vec<u8> = Vec::new();
-        if vec_split.len() == 4 {
-            //Check that everything formats properly
-            for x in 0..4 {
-                let temp: u8 = match vec_split[x].parse::<u8>() {
-                    Err(e) => return Err(IpErrors::InvalidIp),
-                    Ok(num) => num,
-                };
-                vec_format.push(temp);
+
+        for item in vec_split {
+            let val = item.parse::<u8>();
+
+            match val {
+                Err(e) => {
+                    return Err(IpErrors::InvalidInput(3));
+                },
+                Ok(num) => {
+                    vec_format.push(num);
+                },
             }
         }
-        Ok((vec_format[0], vec_format[1], vec_format[2], vec_format[3]))
+        Ok(vec_format)
     }
 
-    fn split_dots_into_vec(s: &str) -> Result<Vec<&str>, IpErrors> {
-        //Figures out if there is enough elements to pass into the next functions
-        let split_vec: Vec<&str> = s.split('.').collect();
-        if split_vec.len() != 4 {
-            return Err(IpErrors::InvalidLength);
+    fn valid_cidr(cidr: &str) -> Result<u8, IpErrors> {
+        match cidr.parse::<u8>() {
+            Err(e) => return Err(IpErrors::InvalidCidr(1)),
+            Ok(num) => Ok(num)
         }
-        Ok(split_vec)
+
     }
-    fn calculate_mask_from_cidr(cidr: &u8) -> (u8, u8, u8, u8) {
-        let filled_octets = cidr / 8;
-        let remainder = get_subnet_from_remaining_bits(cidr % 8);
-        let full_octet = 255;
-        match filled_octets {
-            1 => (full_octet, remainder, 0, 0),
-            2 => (full_octet, full_octet, remainder, 0),
-            3 => (full_octet, full_octet, full_octet, remainder),
-            4 => (full_octet, full_octet, full_octet, full_octet),
-            _ => (0, 0, 0, 0)
+
+    fn calc_subnet(cidr: u8) -> Vec<u8> {
+        let mut mask: Vec<u8> = Vec::new();
+        let filled_count = cidr / 8;
+        for n in 0..filled_count {
+            mask.push(255);
         }
-    }
+        //get the remainder
+        let remainder = cidr % 8;
 
-
-    /// Returns the number for a given number of bits that are turned on
-    /// From right to left
-    /// # Arguments
-    /// * 'num' - the number of bits that are supposed to be flipped on
-    ///             for an octet.
-    /// # Example
-    ///   3 = 240 
-    /// 2 = 192 etc... 
-    fn get_subnet_from_remaining_bits(num: u8) -> u8 {
+        //now we need to calculate the number for this value
         let mut total: u8 = 0;
-        for x in 8 - num..8 {
-            total += 2u8.pow(x as u32);
+        while remainder >= 0 {
+            total += 2u8.pow(remainder as u32);
         }
-        total
+        mask.push(total);
+
+        while mask.len() < 4  {
+            mask.push(0);
+        }
+        mask
+
     }
 
+
+
+
+    //This section will be here to handle errors, because I am too dumb
+    //To figure out how to split this more logically
+
+
+
+
+
+    fn handle_invalid_input(error: IpErrors) {
+        match error {
+            IpErrors::InvalidInput(1) => {
+                println!("Could not find the split between the IP and the CIDR notation");
+                std::process::exit(1);
+            },
+            IpErrors::InvalidInput(2) => {
+                println!("Invalid IP format");
+                std::process::exit(2);
+            },
+            IpErrors::InvalidInput(3) => {
+                println!("Invalid IP range");
+                std::process::exit(3);
+            },
+            _ => {
+                panic!("Invalid CIDR is not covered in this function");
+            }
+        }
+    }
+
+    
 
 }
 
-#[cfg(test)]
 mod tests {
     use super::*;
     #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-    #[test]
-    fn check_something() {
-        let temp = String::from("127.0.0.1/8");
-        let subnet = subnetter::IpSubnet::new(&temp);
+    //Checks if it splits and checks properly.
+    fn proper_split() {
+        match subnetter::split_string(&String::from("127.0.0.1/27")) {
+            Ok(num) => assert_eq!(1, 1),
+            Err(e) => assert_eq!(1, 2),
+        }
     }
 
+    #[test]
+    //Test to make sure that the subnetter can split an IP into a proper string
+    fn check_ipstring_to_tuple() {
+        assert_eq!(convert_string_into_tuple(&"127.0.0.1"), (127,0,0,0));
+    }
 }
