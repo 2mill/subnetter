@@ -1,4 +1,4 @@
-mod errors;
+use std::process;
 mod subnetter {
     use std::net::Ipv4Addr;
     pub enum IpErrors {
@@ -12,9 +12,8 @@ mod subnetter {
         cidr: u8,
     }
 
-    pub fn new(ip_string: String) {
+    pub fn new(ip_string: String) -> IpSubnet {
 
-        
         //Begin by parsing the String into parts.
     }    
 
@@ -90,6 +89,35 @@ mod subnetter {
 
     }
 
+
+
+
+    //This section will be here to handle errors, because I am too dumb
+    //To figure out how to split this more logically
+
+
+
+
+
+    fn handle_invalid_input(error: IpErrors) {
+        match error {
+            IpErrors::InvalidInput(1) => {
+                println!("Could not find the split between the IP and the CIDR notation");
+                std::process::exit(1);
+            },
+            IpErrors::InvalidInput(2) => {
+                println!("Invalid IP format");
+                std::process::exit(2);
+            },
+            IpErrors::InvalidInput(3) => {
+                println!("Invalid IP range");
+                std::process::exit(3);
+            },
+            _ => {
+                panic!("Invalid CIDR is not covered in this function");
+            }
+        }
+    }
 
     
 
