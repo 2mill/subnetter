@@ -1,5 +1,5 @@
 [package]
-name = "subnet_lib"
+name = "subnet"
 version = "0.1.0"
 authors = ["2mill <yannick.dorn@gmail.com>"]
 edition = "2018"
